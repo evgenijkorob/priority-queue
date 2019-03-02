@@ -1,5 +1,11 @@
 const Node = require('./node');
 
+function swap(x, y, arr) {
+	let tmp = arr[x];
+	arr[x] = arr[y];
+	arr[y] = tmp;
+}
+
 class MaxHeap {
 	constructor() {
 		this.root = null;
@@ -18,15 +24,18 @@ class MaxHeap {
 		}
 
 		let detachedRoot = this.detachRoot();
-		this.restoreRootFromLastInsertedNode(detachedRoot);
-		this.shiftNodeDown(this.root);
+		if (!this.isEmpty()) {
+			this.restoreRootFromLastInsertedNode(detachedRoot);
+			this.shiftNodeDown(this.root);
+		}
+
 		return detachedRoot.data;
 	}
 
 	detachRoot() {
 		let rootNode = this.root;
 		this.root = null;
-		if (this.parentNodes[0] === rootNode) {
+		if (rootNode.right == null) {
 			this.parentNodes.shift();
 		}
 		return rootNode;
@@ -34,19 +43,23 @@ class MaxHeap {
 
 	restoreRootFromLastInsertedNode(detached) {
 		this.root = this.parentNodes.pop();
-		if (this.root.parent && this.root.side == 'right') {
+		if (this.root.parent
+			&& this.root.parent !== detached
+			&& this.root.parent.right) {
 			this.parentNodes.unshift(this.root.parent);
 		}
 
 		this.root.remove();
-		detached.setChildsParent(this.root);
-		if (detached.left) {
-			this.root.left = detached.left;
+		if (detached instanceof Node) {
+			detached.setChildsParent(this.root);
+			if (detached.left) {
+				this.root.left = detached.left;
+			}
+			if (detached.right) {
+				this.root.right = detached.right;
+			}
 		}
-		if (detached.right) {
-			this.root.right = detached.right;
-		}
-		else {
+		if (this.root.right == null) {
 			this.parentNodes.unshift(this.root);
 		}
 	}
@@ -78,13 +91,6 @@ class MaxHeap {
 		this.parentNodes.push(node);
 	}
 
-	_swap(x, y) {
-		let arr = this.parentNodes;
-		let tmp = arr[x];
-		arr[x] = arr[y];
-		arr[y] = tmp;
-	}
-
 	shiftNodeUp(node) {
 		if (node.parent && (node.parent.priority < node.priority)) {
 			let parentIndx = -1, nodeIndx = -1;
@@ -96,7 +102,7 @@ class MaxHeap {
 			}
 
 			if (parentIndx != -1) {
-				this._swap(parentIndx, nodeIndx);
+			  swap(parentIndx, nodeIndx, this.parentNodes);
 			}
 			else if (nodeIndx != -1) {
 				this.parentNodes.splice(nodeIndx, 1, node.parent);
@@ -131,7 +137,7 @@ class MaxHeap {
 		}
 
 		if (indxOfNode != -1 && indxOfMaxPrior != -1) {
-			this._swap(indxOfMaxPrior, indxOfNode);
+			swap(indxOfMaxPrior, indxOfNode, this.parentNodes);
 		}
 		else if (indxOfMaxPrior != -1) {
 			this.parentNodes.splice(indxOfMaxPrior, 1, node);
